@@ -1,24 +1,31 @@
 package ua.itsupport.util;
 
 class FormatHelper {
-    private FormatHelper() {}
 
-    static String normalizeString(String value) {
-        return value == null ? null : value.trim();
+    private FormatHelper() {
     }
 
-    static String normalizeEmail(String value) {
-        return value == null ? null : value.trim().toLowerCase();
+    static String normalizeTrim(String str) {
+        return str == null ? null : str.trim();
     }
 
-    static String normalizeEnum(String value, String[] allowed) {
-        if (value == null) return null;
-        String upper = value.trim().toUpperCase();
-        for (String item : allowed) {
-            if (item.equals(upper)) {
-                return upper;
-            }
+    static String normalizeLower(String str) {
+        return str == null ? null : str.trim().toLowerCase();
+    }
+
+    static String normalizeUpper(String str) {
+        return str == null ? null : str.trim().toUpperCase();
+    }
+
+    static String capitalize(String str) {
+        if (str == null || str.isBlank()) {
+            return str;
         }
-        throw new IllegalArgumentException("Invalid value: " + value + ". Allowed: " + String.join(", ", allowed));
+        String trimmed = str.trim();
+        return Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1).toLowerCase();
+    }
+
+    static String formatMoney(double amount) {
+        return String.format("%.2f грн", amount);
     }
 }
