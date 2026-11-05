@@ -1,6 +1,7 @@
 package ua.itsupport.util;
 
 import ua.itsupport.model.ITTicket;
+import ua.itsupport.model.Priority;
 import ua.itsupport.model.WorkLog;
 
 import java.time.LocalDate;
@@ -10,7 +11,6 @@ import java.util.Map;
 
 public class ITSupportUtils {
 
-    static final List<String> VALID_PRIORITIES = List.of("LOW", "MEDIUM", "HIGH", "CRITICAL");
     static final List<String> VALID_STATES = List.of("OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED");
 
     private static final Map<Integer, Double> HOURLY_RATES = Map.of(
@@ -21,8 +21,7 @@ public class ITSupportUtils {
         5, 85.0
     );
 
-    private ITSupportUtils() {
-    }
+    private ITSupportUtils() {}
 
     public static String cleanAndLower(String value, String fieldName) {
         ValidationHelper.requireNotBlank(value, fieldName);
@@ -34,16 +33,13 @@ public class ITSupportUtils {
         return FormatHelper.normalizeTrim(value);
     }
 
-    public static String cleanPriority(String priority) {
-        ValidationHelper.requireNotBlank(priority, "Priority");
-        String normalized = FormatHelper.normalizeUpper(priority);
-        return ValidationHelper.requireInAllowedValues(normalized, VALID_PRIORITIES, "Priority");
-    }
-
     public static String cleanState(String state) {
         ValidationHelper.requireNotBlank(state, "State");
         String normalized = FormatHelper.normalizeUpper(state);
-        return ValidationHelper.requireInAllowedValues(normalized, VALID_STATES, "State");
+        if (!VALID_STATES.contains(normalized)) {
+            throw new IllegalArgumentException("State must be one of " + VALID_STATES + ", got: '" + normalized + "'");
+        }
+        return normalized;
     }
 
     public static <T> T checkNotNull(T value, String fieldName) {
@@ -56,10 +52,6 @@ public class ITSupportUtils {
 
     public static double checkHoursSpent(double hours) {
         return ValidationHelper.requireInRange(hours, 0.25, 24.0, "Hours spent");
-    }
-
-    public static double validateHoursSpent(double hours) {
-        return checkHoursSpent(hours);
     }
 
     public static LocalDate checkCreatedDate(LocalDate date) {
@@ -86,18 +78,44 @@ public class ITSupportUtils {
         return FormatHelper.formatMoney(amount);
     }
 
+    /**
+     * 1st Switch Expression: by enum Priority, WITHOUT default, covering all constants.
+     */
+    public static String getPriorityDescription(Priority priority) {
+        return switch (priority) {
+            case LOW -> "Низький пріоритет (планова задача)";
+            case MEDIUM -> "Середній пріоритет (стандартна заява)";
+            case HIGH -> "Високий пріоритет (терміново)";
+            case CRITICAL -> "Критичний пріоритет (аварія системи)";
+        };
+    }
+
+    /**
+     * 2nd Switch Expression: behavior choice based on ticket state.
+     */
+    public static String getActionDescriptionByState(String state) {
+        return switch (state) {
+            case "OPEN" -> "Заявка зареєстрована та очікує призначення.";
+            case "IN_PROGRESS" -> "Технік працює над вирішенням проблеми.";
+            case "RESOLVED" -> "Проблему вирішено, очікує підтвердження.";
+            case "CLOSED" -> "Заявка закрита.";
+            default -> "Невідомий стан заявки.";
+        };
+    }
+
     public static long resolutionDays(ITTicket ticket) {
         ValidationHelper.requireNotNull(ticket, "Ticket");
-        if (ticket.getResolvedDate() == null) {
+        if (ticket.resolvedDate() == null) {
             return -1;
         }
-        return ChronoUnit.DAYS.between(ticket.getCreatedDate(), ticket.getResolvedDate());
+        return ChronoUnit.DAYS.between(ticket.createdDate(), ticket.resolvedDate());
     }
 
     public static double workCost(WorkLog log) {
         ValidationHelper.requireNotNull(log, "WorkLog");
-        int skill = log.getTechnician().getSkillLevel();
+        int skill = log.technician().getSkillLevel();
         double rate = HOURLY_RATES.getOrDefault(skill, 15.0);
-        return log.getHoursSpent() * rate;
+        double priorityMultiplier = log.ticket().priority().getWeightFactor();
+        return log.hoursSpent() * rate * priorityMultiplier;
     }
 }

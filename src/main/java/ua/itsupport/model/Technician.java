@@ -1,21 +1,21 @@
 package ua.itsupport.model;
 
-import ua.common.BaseEntity;
 import ua.itsupport.util.ITSupportUtils;
-
+import java.time.LocalDateTime;
 import java.util.Objects;
 
-public class Technician extends BaseEntity {
+public class Technician {
 
     private final String techCode;
     private final String name;
     private int skillLevel;
+    private final LocalDateTime createdAt;
 
     public Technician(String techCode, String name, int skillLevel) {
-        super();
         this.techCode = ITSupportUtils.cleanNotBlank(techCode, "Tech code");
         this.name = ITSupportUtils.cleanNotBlank(name, "Technician name");
         setSkillLevel(skillLevel);
+        this.createdAt = LocalDateTime.now();
     }
 
     public final void setSkillLevel(int skillLevel) {
@@ -32,6 +32,10 @@ public class Technician extends BaseEntity {
 
     public int getSkillLevel() {
         return skillLevel;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
     @Override

@@ -2,6 +2,7 @@ package ua.itsupport;
 
 import ua.itsupport.model.ITTicket;
 import ua.itsupport.model.ITUser;
+import ua.itsupport.model.Priority;
 import ua.itsupport.model.Technician;
 import ua.itsupport.model.WorkLog;
 import ua.itsupport.util.ITSupportUtils;
@@ -11,69 +12,58 @@ import java.time.LocalDate;
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("1. Створення конструктором та фабричним методом");
-        Technician tech1 = new Technician("TECH-01", "Олександр Мельник", 3);
-        System.out.println("Технік (конструктор): " + tech1);
+        System.out.println("1. Створення record та звернення до компонентів");
+        ITUser user1 = new ITUser("alex.dou@corp.net", "Олексій Дорошенко", "Фінансовий відділ");
+        System.out.println("Користувач (record): " + user1);
+        System.out.println("Виклик компонента user1.email(): " + user1.email());
+        System.out.println("Виклик компонента user1.fullName(): " + user1.fullName());
 
-        ITUser user1 = ITUser.of("  Alex.DOU@Corp.NET  ", "Олексій Дорошенко", "Фінансовий відділ");
-        System.out.println("Користувач (фабрика of()): " + user1);
+        System.out.println("\n2. Робота з Enum");
+        System.out.println("Перебір усіх констант Priority через values():");
+        for (Priority p : Priority.values()) {
+            System.out.println(" - " + p + " (коефіцієнт: " + p.getWeightFactor() + ")");
+        }
 
-        System.out.println("\n2. Нормалізація в дії");
-        System.out.println("Email до: '  Alex.DOU@Corp.NET  ' -> після: '" + user1.getEmail() + "'");
-        
+        try {
+            Priority.valueOf("URGENT");
+      } catch (IllegalArgumentException e) {
+            System.out.println("Перехоплено помилку valueOf на невідомій константі: " + e.getMessage());
+      }
+
+        System.out.println("\n3. Демонстрація switch-виразів");
         ITTicket ticket1 = new ITTicket(
                 "INC-101",
                 user1,
-                " critical ", 
-                "Збій принтера",
-                LocalDate.now().minusDays(5),
-                LocalDate.now().minusDays(1),
-                " closed "    
+                Priority.CRITICAL,
+                "Збій серверної бази даних",
+                LocalDate.now().minusDays(3),
+                LocalDate.now(),
+                "CLOSED"
         );
-        System.out.println("Priority після нормалізації: '" + ticket1.getPriority() + "'");
-        System.out.println("State після нормалізації: '" + ticket1.getState() + "'");
+        System.out.println("Switch 1 (опис Priority.CRITICAL): " + ITSupportUtils.getPriorityDescription(ticket1.priority()));
+        System.out.println("Switch 2 (опис дії за станом CLOSED): " + ITSupportUtils.getActionDescriptionByState(ticket1.state()));
 
-        System.out.println("\n3. Демонстрація formatMoney та capitalize");
-        System.out.println("capitalize('іван петренко'): '" + ITSupportUtils.capitalizeText("іван петренко") + "'");
-        WorkLog workLog = WorkLog.of(ticket1, tech1, LocalDate.now().minusDays(2), 4.5);
+        System.out.println("\n4. Валідація у компактному конструкторі record");
+        try {
+            new ITUser("   ", "Помилковий Користувач", "IT");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Перехоплено виняток з компактного конструктора ITUser: " + e.getMessage());
+        }
+
+        System.out.println("\n5. Автоматичні equals та hashCode для record");
+        ITUser userDuplicate = new ITUser("alex.dou@corp.net", "Олексій Дорошенко", "Фінансовий відділ");
+        System.out.println("user1.equals(userDuplicate): " + user1.equals(userDuplicate));
+        System.out.println("user1.hashCode() == userDuplicate.hashCode(): " + (user1.hashCode() == userDuplicate.hashCode()));
+
+        System.out.println("\n6. Вивід через згенерований toString()");
+        Technician tech1 = new Technician("TECH-01", "Олександр Мельник", 4);
+        WorkLog workLog = new WorkLog(ticket1, tech1, LocalDate.now().minusDays(1), 6.0);
+        
+        System.out.println("Вивід ITUser: " + user1);
+        System.out.println("Вивід ITTicket: " + ticket1);
+        System.out.println("Вивід WorkLog: " + workLog);
+        
         double cost = ITSupportUtils.workCost(workLog);
-        System.out.println("Розрахунок вартості: " + ITSupportUtils.formatMoneyValue(cost));
-
-        System.out.println("\n4. Порушення правил валідації (try/catch)");
-        try {
-            new Technician("TECH-99", "Іван", 8);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Помилка 1: " + e.getMessage());
-        }
-
-        try {
-            new ITTicket("INC-998", user1, "   ", "Тест", LocalDate.now(), null, "OPEN");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Помилка 2: " + e.getMessage());
-        }
-
-        System.out.println("\n5. Невдалий виклик сеттера та збереження старого значення");
-        System.out.println("Початковий skillLevel: " + tech1.getSkillLevel());
-        try {
-            tech1.setSkillLevel(10);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Сеттер відхилив значення: " + e.getMessage());
-        }
-        System.out.println("SkillLevel після невдалої спроби не змінився: " + tech1.getSkillLevel());
-
-        System.out.println("\n6. Порівняння ==/equals/hashCode");
-        ITUser user2 = ITUser.of("alex.dou@corp.net", "Інше Ім'я", "Інший Департамент");
-        ITUser userDifferent = ITUser.of("marta@corp.net", "Марта", "HR");
-
-        System.out.println("user1 == user2: " + (user1 == user2));
-        System.out.println("user1.equals(user2): " + user1.equals(user2));
-        System.out.println("user1.hashCode() == user2.hashCode(): " + (user1.hashCode() == user2.hashCode()));
-        System.out.println("user1.equals(userDifferent): " + user1.equals(userDifferent));
-
-        System.out.println("\n7. Вивід сутностей через toString() (усі поля включено)");
-        System.out.println(user1);
-        System.out.println(tech1);
-        System.out.println(ticket1);
-        System.out.println(workLog);
+        System.out.println("Розрахована вартість робіт: " + ITSupportUtils.formatMoneyValue(cost));
     }
 }
