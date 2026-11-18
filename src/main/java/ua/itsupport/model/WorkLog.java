@@ -12,7 +12,7 @@ public record WorkLog(
     public WorkLog {
         ITSupportUtils.checkNotNull(ticket, "Ticket");
         ITSupportUtils.checkNotNull(technician, "Technician");
-        ITSupportUtils.checkLogDate(logDate, ticket.createdDate());
+        ITSupportUtils.checkLogDate(logDate, ticket.getCreatedDate());
         ITSupportUtils.checkHoursSpent(hoursSpent);
     }
 }

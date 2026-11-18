@@ -3,6 +3,7 @@ package ua.itsupport;
 import ua.itsupport.model.ITTicket;
 import ua.itsupport.model.ITUser;
 import ua.itsupport.model.Priority;
+import ua.itsupport.model.TicketState;
 import ua.itsupport.model.Technician;
 import ua.itsupport.model.WorkLog;
 import ua.itsupport.util.ITSupportUtils;
@@ -18,7 +19,7 @@ public class Main {
         System.out.println("Виклик компонента user1.email(): " + user1.email());
         System.out.println("Виклик компонента user1.fullName(): " + user1.fullName());
 
-        System.out.println("\n2. Робота з Enum");
+        System.out.println("\n2. Робота з Enum (Priority та TicketState)");
         System.out.println("Перебір усіх констант Priority через values():");
         for (Priority p : Priority.values()) {
             System.out.println(" - " + p + " (коефіцієнт: " + p.getWeightFactor() + ")");
@@ -26,9 +27,9 @@ public class Main {
 
         try {
             Priority.valueOf("URGENT");
-      } catch (IllegalArgumentException e) {
-            System.out.println("Перехоплено помилку valueOf на невідомій константі: " + e.getMessage());
-      }
+        } catch (IllegalArgumentException e) {
+            System.out.println("Перехоплено помилку valueOf на невідомій константі Priority: " + e.getMessage());
+        }
 
         System.out.println("\n3. Демонстрація switch-виразів");
         ITTicket ticket1 = new ITTicket(
@@ -38,10 +39,13 @@ public class Main {
                 "Збій серверної бази даних",
                 LocalDate.now().minusDays(3),
                 LocalDate.now(),
-                "CLOSED"
+                TicketState.OPEN
         );
-        System.out.println("Switch 1 (опис Priority.CRITICAL): " + ITSupportUtils.getPriorityDescription(ticket1.priority()));
-        System.out.println("Switch 2 (опис дії за станом CLOSED): " + ITSupportUtils.getActionDescriptionByState(ticket1.state()));
+        
+        ticket1.setState(TicketState.CLOSED);
+
+        System.out.println("Switch 1 (опис Priority.CRITICAL): " + ITSupportUtils.getPriorityDescription(ticket1.getPriority()));
+        System.out.println("Switch 2 (опис дії за станом CLOSED): " + ITSupportUtils.getActionDescriptionByState(ticket1.getState()));
 
         System.out.println("\n4. Валідація у компактному конструкторі record");
         try {
@@ -55,12 +59,12 @@ public class Main {
         System.out.println("user1.equals(userDuplicate): " + user1.equals(userDuplicate));
         System.out.println("user1.hashCode() == userDuplicate.hashCode(): " + (user1.hashCode() == userDuplicate.hashCode()));
 
-        System.out.println("\n6. Вивід через згенерований toString()");
+        System.out.println("\n6. Вивід об'єктів та розрахунок вартості");
         Technician tech1 = new Technician("TECH-01", "Олександр Мельник", 4);
         WorkLog workLog = new WorkLog(ticket1, tech1, LocalDate.now().minusDays(1), 6.0);
         
         System.out.println("Вивід ITUser: " + user1);
-        System.out.println("Вивід ITTicket: " + ticket1);
+        System.out.println("Вивід ITTicket (клас): " + ticket1);
         System.out.println("Вивід WorkLog: " + workLog);
         
         double cost = ITSupportUtils.workCost(workLog);

@@ -1,12 +1,10 @@
 package ua.itsupport.util;
 
 import java.time.LocalDate;
-import java.util.Collection;
 
 class ValidationHelper {
 
-    private ValidationHelper() {
-    }
+    private ValidationHelper() {}
 
     static <T> T requireNotNull(T value, String fieldName) {
         if (value == null) {
@@ -57,15 +55,5 @@ class ValidationHelper {
             );
         }
         return date;
-    }
-
-    static String requireInAllowedValues(String value, Collection<String> allowed, String fieldName) {
-        requireNotBlank(value, fieldName);
-        if (!allowed.contains(value)) {
-            throw new IllegalArgumentException(
-                String.format("%s must be one of %s, got: '%s'", fieldName, allowed, value)
-            );
-        }
-        return value;
     }
 }
