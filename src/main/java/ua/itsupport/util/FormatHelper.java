@@ -2,8 +2,7 @@ package ua.itsupport.util;
 
 class FormatHelper {
 
-    private FormatHelper() {
-    }
+    private FormatHelper() {}
 
     static String normalizeTrim(String str) {
         return str == null ? null : str.trim();

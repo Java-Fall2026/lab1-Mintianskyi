@@ -1,17 +1,15 @@
 package ua.itsupport.util;
 
 import ua.itsupport.model.ITTicket;
+import ua.itsupport.model.Priority;
+import ua.itsupport.model.TicketState;
 import ua.itsupport.model.WorkLog;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Map;
 
 public class ITSupportUtils {
-
-    static final List<String> VALID_PRIORITIES = List.of("LOW", "MEDIUM", "HIGH", "CRITICAL");
-    static final List<String> VALID_STATES = List.of("OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED");
 
     private static final Map<Integer, Double> HOURLY_RATES = Map.of(
         1, 15.0,
@@ -21,8 +19,7 @@ public class ITSupportUtils {
         5, 85.0
     );
 
-    private ITSupportUtils() {
-    }
+    private ITSupportUtils() {}
 
     public static String cleanAndLower(String value, String fieldName) {
         ValidationHelper.requireNotBlank(value, fieldName);
@@ -32,18 +29,6 @@ public class ITSupportUtils {
     public static String cleanNotBlank(String value, String fieldName) {
         ValidationHelper.requireNotBlank(value, fieldName);
         return FormatHelper.normalizeTrim(value);
-    }
-
-    public static String cleanPriority(String priority) {
-        ValidationHelper.requireNotBlank(priority, "Priority");
-        String normalized = FormatHelper.normalizeUpper(priority);
-        return ValidationHelper.requireInAllowedValues(normalized, VALID_PRIORITIES, "Priority");
-    }
-
-    public static String cleanState(String state) {
-        ValidationHelper.requireNotBlank(state, "State");
-        String normalized = FormatHelper.normalizeUpper(state);
-        return ValidationHelper.requireInAllowedValues(normalized, VALID_STATES, "State");
     }
 
     public static <T> T checkNotNull(T value, String fieldName) {
@@ -56,10 +41,6 @@ public class ITSupportUtils {
 
     public static double checkHoursSpent(double hours) {
         return ValidationHelper.requireInRange(hours, 0.25, 24.0, "Hours spent");
-    }
-
-    public static double validateHoursSpent(double hours) {
-        return checkHoursSpent(hours);
     }
 
     public static LocalDate checkCreatedDate(LocalDate date) {
@@ -86,6 +67,24 @@ public class ITSupportUtils {
         return FormatHelper.formatMoney(amount);
     }
 
+    public static String getPriorityDescription(Priority priority) {
+        return switch (priority) {
+            case LOW -> "Низький пріоритет (планова задача)";
+            case MEDIUM -> "Середній пріоритет (стандартна заява)";
+            case HIGH -> "Високий пріоритет (терміново)";
+            case CRITICAL -> "Критичний пріоритет (аварія системи)";
+        };
+    }
+
+    public static String getActionDescriptionByState(TicketState state) {
+        return switch (state) {
+            case OPEN -> "Заявка зареєстрована та очікує призначення.";
+            case IN_PROGRESS -> "Технік працює над вирішенням проблеми.";
+            case RESOLVED -> "Проблему вирішено, очікує підтвердження.";
+            case CLOSED -> "Заявка закрита.";
+        };
+    }
+
     public static long resolutionDays(ITTicket ticket) {
         ValidationHelper.requireNotNull(ticket, "Ticket");
         if (ticket.getResolvedDate() == null) {
@@ -96,8 +95,9 @@ public class ITSupportUtils {
 
     public static double workCost(WorkLog log) {
         ValidationHelper.requireNotNull(log, "WorkLog");
-        int skill = log.getTechnician().getSkillLevel();
+        int skill = log.technician().getSkillLevel();
         double rate = HOURLY_RATES.getOrDefault(skill, 15.0);
-        return log.getHoursSpent() * rate;
+        double priorityMultiplier = log.ticket().getPriority().getWeightFactor();
+        return log.hoursSpent() * rate * priorityMultiplier;
     }
 }
